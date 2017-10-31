@@ -48,7 +48,7 @@ class SupplierProposal extends CommonObject
     public $table_element='supplier_proposal';
     public $table_element_line='supplier_proposaldet';
     public $fk_element='fk_supplier_proposal';
-    protected $ismultientitymanaged = 1;	// 0=No test on entity, 1=Test with field entity, 2=Test with link by societe
+    public $ismultientitymanaged = 1;	// 0=No test on entity, 1=Test with field entity, 2=Test with link by societe
     public $picto='propal';
 
     /**
@@ -1364,7 +1364,7 @@ class SupplierProposal extends CommonObject
             $this->newref = $num;
 
             $sql = "UPDATE ".MAIN_DB_PREFIX."supplier_proposal";
-            $sql.= " SET ref = '".$num."',";
+            $sql.= " SET ref = '".$this->db->escape($num)."',";
             $sql.= " fk_statut = 1, date_valid='".$this->db->idate($now)."', fk_user_valid=".$user->id;
             $sql.= " WHERE rowid = ".$this->id." AND fk_statut = 0";
 
@@ -1437,7 +1437,7 @@ class SupplierProposal extends CommonObject
         else
         {
         	dol_syslog("You don't have permission to validate supplier proposal", LOG_WARNING);
-        	return -1;
+        	return -2;
         }
     }
 
