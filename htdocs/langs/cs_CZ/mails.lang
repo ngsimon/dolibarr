@@ -87,6 +87,7 @@ MailingModuleDescEmailsFromFile=Emaily ze souboru
 MailingModuleDescEmailsFromUser=Emaily zadávané uživatelem
 MailingModuleDescDolibarrUsers=Uživatelé s e-maily
 MailingModuleDescThirdPartiesByCategories=Subjekty (podle kategorií)
+SendingFromWebInterfaceIsNotAllowed=Sending from web interface is not allowed.
 
 # Libelle des modules de liste de destinataires mailing
 LineInFile=Řádek  %s v souboru
@@ -99,7 +100,6 @@ NbOfCompaniesContacts=Unikátní kontakty/adresy
 MailNoChangePossible=Příjemce pro validované rozesílání nelze změnit
 SearchAMailing=Hledat mailing
 SendMailing=Poslat zprávy
-SendMail=Odeslat e-mail
 SentBy=Odeslal
 MailingNeedCommand=Sending an emailing can be performed from command line. Ask your server administrator to launch the following command to send the emailing to all recipients:
 MailingNeedCommand2=Můžete odeslat všem on-line přidáním parametru MAILING_LIMIT_SENDBYWEB s hodnotou max počet e-mailů, které chcete poslat v této dávce. K aktivaci přejděte na Domů - Nastavení - Ostatní.

@@ -87,6 +87,7 @@ MailingModuleDescEmailsFromFile=Emails from file
 MailingModuleDescEmailsFromUser=Emails input by user
 MailingModuleDescDolibarrUsers=Users with Emails
 MailingModuleDescThirdPartiesByCategories=Third parties (by categories)
+SendingFromWebInterfaceIsNotAllowed=Sending from web interface is not allowed.
 
 # Libelle des modules de liste de destinataires mailing
 LineInFile=Failo eilutė %s
@@ -99,7 +100,6 @@ NbOfCompaniesContacts=Unikalūs kontaktai/ adresai
 MailNoChangePossible=Patvirtintų e-laiškų gavėjai negali būti pakeisti
 SearchAMailing=E-pašto paieška
 SendMailing=Siųsti e-paštą
-SendMail=Siųsti e-laišką
 SentBy=Išsiųsta iš
 MailingNeedCommand=Sending an emailing can be performed from command line. Ask your server administrator to launch the following command to send the emailing to all recipients:
 MailingNeedCommand2=Galite siųsti jiems internetu pridedant parametrą MAILING_LIMIT_SENDBYWEB su maks. laiškų kiekio, norimų siųsti sesijos metu, reikšme. Tam eiti į Pagrindinis-Nustatymai-Kiti.

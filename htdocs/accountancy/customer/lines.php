@@ -64,7 +64,7 @@ $limit = GETPOST('limit','int')?GETPOST('limit', 'int'):(empty($conf->global->AC
 $sortfield = GETPOST('sortfield', 'alpha');
 $sortorder = GETPOST('sortorder', 'alpha');
 $page = GETPOST('page', 'int');
-if ($page < 0) $page = 0;
+if (empty($page) || $page < 0) $page = 0;
 $pageprev = $page - 1;
 $pagenext = $page + 1;
 $offset = $limit * $page;
@@ -163,7 +163,7 @@ print '<script type="text/javascript">
 /*
  * Customer Invoice lines
  */
-$sql = "SELECT f.rowid, f.facnumber, f.type, f.datef, f.ref_client,";
+$sql = "SELECT f.rowid as facid, f.facnumber, f.type, f.datef, f.ref_client,";
 $sql .= " fd.rowid, fd.description, fd.product_type, fd.total_ht, fd.total_tva, fd.tva_tx, fd.vat_src_code, fd.total_ttc,";
 $sql .= " s.rowid as socid, s.nom as name, s.code_compta, s.code_client,";
 $sql .= " p.rowid as product_id, p.ref as product_ref, p.label as product_label, p.accountancy_code_sell, aa.rowid as fk_compte, aa.account_number, aa.label as label_compte,";
@@ -333,7 +333,7 @@ if ($result) {
 		$codecompta = length_accountg($objp->account_number) . ' - ' . $objp->label_compte;
 
 		$facture_static->ref = $objp->facnumber;
-		$facture_static->id = $objp->rowid;
+		$facture_static->id = $objp->facid;
 
 		$product_static->ref = $objp->product_ref;
 		$product_static->id = $objp->product_id;
@@ -365,7 +365,7 @@ if ($result) {
 		print '<td align="right">' . price($objp->total_ht) . '</td>';
 		print '<td align="right">' . vatrate($objp->tva_tx.($objp->vat_src_code?' ('.$objp->vat_src_code.')':'')) . '</td>';
 		print '<td align="center">';
-		print $codecompta . ' <a href="./card.php?id=' . $objp->rowid . '">';
+		print $codecompta . ' <a href="./card.php?id=' . $objp->rowid . '&backtopage='.urlencode($_SERVER["PHP_SELF"].($param?'?'.$param:'')).'">';
 		print img_edit();
 		print '</a>';
 		print '</td>';

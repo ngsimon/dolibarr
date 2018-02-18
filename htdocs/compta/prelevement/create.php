@@ -72,8 +72,7 @@ if ($action == 'create')
 	}
 	elseif ($result == 0)
 	{
-		$mesg='';
-		$mesg=$langs->trans("NoInvoiceCouldBeWithdrawed");
+		$mesg=$langs->trans("NoInvoiceCouldBeWithdrawed", $format);
 		setEventMessages($mesg, null, 'errors');
 		$mesg.='<br>'."\n";
 		foreach($bprev->invoice_in_error as $key => $val)
@@ -280,7 +279,7 @@ print load_fiche_titre($langs->trans("LastWithdrawalReceipts",$limit),'','');
 $sql = "SELECT p.rowid, p.ref, p.amount, p.statut";
 $sql.= ", p.datec";
 $sql.= " FROM ".MAIN_DB_PREFIX."prelevement_bons as p";
-$sql.= " WHERE p.entity = ".$conf->entity;
+$sql.= " WHERE p.entity IN (".getEntity('facture').")";
 $sql.= " ORDER BY datec DESC";
 $sql.=$db->plimit($limit);
 

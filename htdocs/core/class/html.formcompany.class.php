@@ -266,10 +266,10 @@ class FormCompany
 							$out.= '<option value="'.$obj->rowid.'">';
 						}
 						// Si traduction existe, on l'utilise, sinon on prend le libelle par defaut
-						if(!empty($conf->global->MAIN_SHOW_REGION_IN_STATE) && $conf->global->MAIN_SHOW_REGION_IN_STATE == 2) {
+						if(!empty($conf->global->MAIN_SHOW_REGION_IN_STATE_SELECT) && $conf->global->MAIN_SHOW_REGION_IN_STATE_SELECT == 2) {
 							$out.= $obj->region_name . ' - ' . $obj->code . ' - ' . ($langs->trans($obj->code)!=$obj->code?$langs->trans($obj->code):($obj->name!='-'?$obj->name:''));
 						}
-						else if(!empty($conf->global->MAIN_SHOW_REGION_IN_STATE) && $conf->global->MAIN_SHOW_REGION_IN_STATE == 1) {
+						else if(!empty($conf->global->MAIN_SHOW_REGION_IN_STATE_SELECT) && $conf->global->MAIN_SHOW_REGION_IN_STATE_SELECT == 1) {
 							$out.= $obj->region_name . ' - ' . ($langs->trans($obj->code)!=$obj->code?$langs->trans($obj->code):($obj->name!='-'?$obj->name:''));
 						}
 						else {
@@ -582,7 +582,6 @@ class FormCompany
 				print '<script type="text/javascript">
 				jQuery(document).ready(function() {
 					$("#search_'.$htmlname.'").change(function() {
-					    console.log("Call runJsCodeForEvent'.$htmlname.'");
 						var obj = '.json_encode($events).';
 						$.each(obj, function(key,values) {
 							if (values.method.length) {
@@ -599,6 +598,7 @@ class FormCompany
 						var method = obj.method;
 						var url = obj.url;
 						var htmlname = obj.htmlname;
+			    		console.log("Run runJsCodeForEvent-'.$htmlname.' from selectCompaniesForNewContact id="+id+" method="+method+" showempty="+showempty+" url="+url+" htmlname="+htmlname);
 						$.getJSON(url,
 							{
 								action: method,
@@ -608,6 +608,7 @@ class FormCompany
 							function(response) {
 								if (response != null)
 								{
+									console.log("Change select#"+htmlname+" with content "+response.value)
 									$.each(obj.params, function(key,action) {
 										if (key.length) {
 											var num = response.num;
@@ -618,7 +619,6 @@ class FormCompany
 											}
 										}
 									});
-						            /* console.log("Change select#"+htmlname+" with content "+response.value) */
 									$("select#" + htmlname).html(response.value);
 								}
 							}

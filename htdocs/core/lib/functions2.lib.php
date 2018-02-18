@@ -995,7 +995,12 @@ function get_next_value($db,$mask,$table,$field,$where='',$objsoc='',$date='',$m
     else dol_print_error($db);
 
     // Check if we must force counter to maskoffset
-    if (empty($counter) || preg_match('/[^0-9]/i',$counter)) $counter=$maskoffset;
+    if (empty($counter)) $counter=$maskoffset;
+    else if (preg_match('/[^0-9]/i',$counter))
+    {
+    	$counter=0;
+    	dol_syslog("Error, the last counter found is '".$counter."' so is not a numeric value. We will restart to 1.", LOG_ERR);
+    }
     else if ($counter < $maskoffset && empty($conf->global->MAIN_NUMBERING_OFFSET_ONLY_FOR_FIRST)) $counter=$maskoffset;
 
     if ($mode == 'last')	// We found value for counter = last counter value. Now need to get corresponding ref of invoice.
@@ -1163,7 +1168,7 @@ function get_string_between($string, $start, $end){
  *
  * @param 	string	$mask		Mask to use
  * @param 	string	$value		Value
- * @return	int     		    <0 if KO, 0 if OK
+ * @return	int|string		    <0 or error string if KO, 0 if OK
  */
 function check_value($mask,$value)
 {
@@ -1249,6 +1254,7 @@ function check_value($mask,$value)
     if (dol_strlen($value) != $len) $result=-1;
 
     // Define $maskLike
+    /* seems not used
     $maskLike = dol_string_nospecial($mask);
     $maskLike = str_replace("%","_",$maskLike);
     // Replace protected special codes with matching number of _ as wild card caracter
@@ -1259,7 +1265,7 @@ function check_value($mask,$value)
     $maskLike = str_replace(dol_string_nospecial('{dd}'),'__',$maskLike);
     $maskLike = str_replace(dol_string_nospecial('{'.$masktri.'}'),str_pad("",dol_strlen($maskcounter),"_"),$maskLike);
     if ($maskrefclient) $maskLike = str_replace(dol_string_nospecial('{'.$maskrefclient.'}'),str_pad("",strlen($maskrefclient),"_"),$maskLike);
-
+	*/
 
     dol_syslog("functions2::check_value result=".$result,LOG_DEBUG);
     return $result;
@@ -1502,7 +1508,7 @@ function dol_print_reduction($reduction,$langs)
     }
     else
     {
-        $string = price($reduction).'%';
+    	$string = vatrate($reduction,true);
     }
 
     return $string;
@@ -1607,7 +1613,7 @@ function getListOfModels($db,$type,$maxfilenamelength=0)
                     if (is_dir($tmpdir))
                     {
 			// all type of template is allowed
-			$tmpfiles=dol_dir_list($tmpdir, 'files', 0, '', '', 'name', SORT_ASC, 0);  
+			$tmpfiles=dol_dir_list($tmpdir, 'files', 0, '', '', 'name', SORT_ASC, 0);
                         if (count($tmpfiles)) $listoffiles=array_merge($listoffiles,$tmpfiles);
                     }
                 }
@@ -1986,7 +1992,7 @@ function getElementProperties($element_type)
         $module 	= $regs[2];
     }
 
-    //print '<br />1. element : '.$element.' - module : '.$module .'<br />';
+    //print '<br>1. element : '.$element.' - module : '.$module .'<br>';
     if ( preg_match('/^([^_]+)_([^_]+)/i',$element,$regs))
     {
         $module = $element = $regs[1];
@@ -2193,18 +2199,18 @@ function cartesianArray(array $input) {
 function getModuleDirForApiClass($module)
 {
     $moduledirforclass=$module;
+    if ($moduledirforclass != 'api') $moduledirforclass = preg_replace('/api$/i','',$moduledirforclass);
 
-    if (in_array($module, array('login', 'access', 'status', 'documents'))) {
+    if ($module == 'contracts') {
+    	$moduledirforclass = 'contrat';
+    }
+    elseif (in_array($module, array('admin', 'login', 'setup', 'access', 'status', 'tools', 'documents'))) {
         $moduledirforclass = 'api';
     }
-    if (preg_match('/^dictionary/', $module)) {
-        $moduledirforclass = 'api';
-    }
-
-    if ($module == 'contact' || $module == 'contacts' || $module == 'customer' || $module == 'thirdparty' || $module == 'thirdparties') {
+    elseif ($module == 'contact' || $module == 'contacts' || $module == 'customer' || $module == 'thirdparty' || $module == 'thirdparties') {
         $moduledirforclass = 'societe';
     }
-    if ($module == 'propale' || $module == 'proposals') {
+    elseif ($module == 'propale' || $module == 'proposals') {
         $moduledirforclass = 'comm/propal';
     }
     elseif ($module == 'agenda' || $module == 'agendaevents') {
@@ -2222,6 +2228,9 @@ function getModuleDirForApiClass($module)
     elseif ($module == 'order' || $module == 'orders') {
         $moduledirforclass = 'commande';
     }
+    elseif ($module == 'shipments') {
+    	$moduledirforclass = 'expedition';
+    }
     elseif ($module == 'facture' || $module == 'invoice' || $module == 'invoices') {
         $moduledirforclass = 'compta/facture';
     }
@@ -2237,6 +2246,9 @@ function getModuleDirForApiClass($module)
     elseif ($module == 'stock' || $module == 'stockmovements' || $module == 'warehouses') {
         $moduledirforclass = 'product/stock';
     }
+    elseif ($module == 'supplierproposals' || $module == 'supplierproposal' || $module == 'supplier_proposal') {
+    	$moduledirforclass = 'supplier_proposal';
+    }
     elseif ($module == 'fournisseur' || $module == 'supplierinvoices' || $module == 'supplierorders') {
         $moduledirforclass = 'fourn';
     }
@@ -2245,6 +2257,9 @@ function getModuleDirForApiClass($module)
     }
     elseif ($module == 'users') {
         $moduledirforclass = 'user';
+    }
+    elseif ($module == 'ficheinter' || $module == 'interventions') {
+    	$moduledirforclass = 'fichinter';
     }
 
     return $moduledirforclass;

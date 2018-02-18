@@ -222,7 +222,7 @@ if (empty($reshook))
     	    if ($ret < 0) $error++;
     	}
 
-    	if ($object->periode_existe($fuser,$object->date_debut,$object->date_fin))
+    	if (empty($conf->global->EXPENSEREPORT_ALLOW_OVERLAPPING_PERIODS) && $object->periode_existe($fuser,$object->date_debut,$object->date_fin))
     	{
     		$error++;
     		setEventMessages($langs->trans("ErrorDoubleDeclaration"), null, 'errors');
@@ -234,8 +234,12 @@ if (empty($reshook))
     		$db->begin();
 
     		$id = $object->create($user);
+    		if ($id <= 0)
+    		{
+    			$error++;
+    		}
 
-    		if ($id > 0)
+    		if (! $error)
     		{
     			$db->commit();
     			Header("Location: ".$_SERVER["PHP_SELF"]."?id=".$id);
@@ -311,11 +315,16 @@ if (empty($reshook))
 
     if ($action == "confirm_validate" && GETPOST("confirm") == "yes" && $id > 0 && $user->rights->expensereport->creer)
     {
+    	$error = 0;
+
+    	$db->begin();
+
     	$object = new ExpenseReport($db);
     	$object->fetch($id);
+
     	$result = $object->setValidate($user);
 
-    	if ($result > 0)
+    	if ($result >= 0)
     	{
     		// Define output language
     		if (empty($conf->global->MAIN_DISABLE_PDF_AUTOUPDATE))
@@ -334,8 +343,13 @@ if (empty($reshook))
     			$object->generateDocument($model, $outputlangs, $hidedetails, $hidedesc, $hideref);
     		}
     	}
+    	else
+    	{
+    		setEventMessages($object->error, $object->errors, 'errors');
+    		$error++;
+    	}
 
-    	if ($result > 0 && $object->fk_user_validator > 0)
+    	if (! $error && $result > 0 && $object->fk_user_validator > 0)
     	{
     		$langs->load("mails");
 
@@ -383,8 +397,6 @@ if (empty($reshook))
     				{
     					$mesg=$langs->trans('MailSuccessfulySent',$mailfile->getValidAddress($emailFrom,2),$mailfile->getValidAddress($emailTo,2));
     					setEventMessages($mesg, null, 'mesgs');
-    					header("Location: ".$_SERVER["PHP_SELF"]."?id=".$id);
-    					exit;
     				}
     				else
     				{
@@ -414,10 +426,17 @@ if (empty($reshook))
     			$action='';
     		}
     	}
-    	else
-    	{
-    		setEventMessages($object->error, $object->errors, 'errors');
-    	}
+
+		if (! $error)
+		{
+			$db->commit();
+			header("Location: ".$_SERVER["PHP_SELF"]."?id=".$id);
+			exit;
+		}
+		else
+		{
+			$db->rollback();
+		}
     }
 
     if ($action == "confirm_save_from_refuse" && GETPOST("confirm") == "yes" && $id > 0 && $user->rights->expensereport->creer)
@@ -1858,16 +1877,13 @@ else
 				$sql = "SELECT p.rowid, p.num_payment, p.datep as dp, p.amount, p.fk_bank,";
 				$sql.= "c.code as p_code, c.libelle as payment_type,";
 				$sql.= "ba.rowid as baid, ba.ref as baref, ba.label, ba.number as banumber, ba.account_number, ba.fk_accountancy_journal";
-				$sql.= " FROM ".MAIN_DB_PREFIX."expensereport as e";
-				$sql.= ", ".MAIN_DB_PREFIX."c_paiement as c ";
-				$sql.= ", ".MAIN_DB_PREFIX."payment_expensereport as p";
-				$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'bank as b ON p.fk_bank = b.rowid';
-				$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'bank_account as ba ON b.fk_account = ba.rowid';
+				$sql.= " FROM ".MAIN_DB_PREFIX."expensereport as e, ".MAIN_DB_PREFIX."payment_expensereport as p";
+				$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."c_paiement as c ON p.fk_typepayment = c.id AND c.entity IN (".getEntity('c_paiement').")";
+				$sql.= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'bank as b ON p.fk_bank = b.rowid';
+				$sql.= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'bank_account as ba ON b.fk_account = ba.rowid';
 				$sql.= " WHERE e.rowid = '".$id."'";
 				$sql.= " AND p.fk_expensereport = e.rowid";
 				$sql.= ' AND e.entity IN ('.getEntity('expensereport').')';
-				$sql.= " AND p.fk_typepayment = c.id";
-				$sql.= " AND c.entity = " . getEntity('c_paiement');
 				$sql.= " ORDER BY dp";
 
 				$resql = $db->query($sql);
@@ -1879,19 +1895,21 @@ else
 				    {
 				        $objp = $db->fetch_object($resql);
 
+				        $paymentexpensereportstatic->id = $objp->rowid;
+				        $paymentexpensereportstatic->datepaye = $db->jdate($objp->dp);
+				        $paymentexpensereportstatic->ref = $objp->rowid;
+				        $paymentexpensereportstatic->num_paiement = $objp->num_paiement;
+				        $paymentexpensereportstatic->payment_code = $objp->payment_code;
+
 				        print '<tr class="oddseven">';
 				        print '<td>';
-						$paymentexpensereportstatic->id = $objp->rowid;
-						$paymentexpensereportstatic->datepaye = $db->jdate($objp->dp);
-						$paymentexpensereportstatic->ref = $objp->rowid;
-						$paymentexpensereportstatic->num_paiement = $objp->num_paiement;
-						$paymentexpensereportstatic->payment_code = $objp->payment_code;
 						print $paymentexpensereportstatic->getNomUrl(1);
 						print '</td>';
 				        print '<td>'.dol_print_date($db->jdate($objp->dp),'day')."</td>\n";
 				        $labeltype=$langs->trans("PaymentType".$objp->p_code)!=("PaymentType".$objp->p_code)?$langs->trans("PaymentType".$objp->p_code):$objp->fk_typepayment;
 				        print "<td>".$labeltype.' '.$objp->num_payment."</td>\n";
-						if (! empty($conf->banque->enabled)) {
+						if (! empty($conf->banque->enabled))
+						{
 							$bankaccountstatic->id = $objp->baid;
 							$bankaccountstatic->ref = $objp->baref;
 							$bankaccountstatic->label = $objp->baref;
@@ -1952,7 +1970,7 @@ else
 				print '<input type="hidden" name="id" value="'.$object->id.'">';
 				print '<input type="hidden" name="fk_expensereport" value="'.$object->id.'" />';
 
-				print '<div class="div-table-responsive">';
+				print '<div class="div-table-responsive-no-min">';
 				print '<table id="tablelines" class="noborder" width="100%">';
 
 				if (!empty($object->lines))
@@ -2011,7 +2029,10 @@ else
 								print '</td>';
 							}
 							// print '<td style="text-align:center;">'.$langs->trans("TF_".strtoupper(empty($objp->type_fees_libelle)?'OTHER':$objp->type_fees_libelle)).'</td>';
-							print '<td style="text-align:center;">'.($langs->trans(($line->type_fees_code)) == $line->type_fees_code ? $line->type_fees_libelle : $langs->trans(($line->type_fees_code))).'</td>';
+							print '<td style="text-align:center;">';
+							$labeltype = ($langs->trans(($line->type_fees_code)) == $line->type_fees_code ? $line->type_fees_libelle : $langs->trans($line->type_fees_code));
+							print $labeltype;
+							print '</td>';
 							print '<td style="text-align:left;">'.$line->comments.'</td>';
 							print '<td style="text-align:right;">'.vatrate($line->vatrate,true).'</td>';
 							print '<td style="text-align:right;">'.price($line->value_unit).'</td>';
@@ -2387,47 +2408,39 @@ if (GETPOST('modelselected')) {
 
 if ($action != 'presend')
 {
-	print '<div class="fichehalfleft">';
 
 	/*
 	 * Generate documents
 	 */
 
-	if($user->rights->expensereport->export && $action != 'create' && $action != 'edit')
+	print '<div class="fichecenter"><div class="fichehalfleft">';
+	print '<a name="builddoc"></a>'; // ancre
+
+	if($user->rights->expensereport->creer && $action != 'create' && $action != 'edit')
 	{
 		$filename	=	dol_sanitizeFileName($object->ref);
 		$filedir	=	$conf->expensereport->dir_output . "/" . dol_sanitizeFileName($object->ref);
 		$urlsource	=	$_SERVER["PHP_SELF"]."?id=".$object->id;
-		$genallowed	=	$user->rights->expensereport->export;
-		$delallowed	=	$user->rights->expensereport->export;
+		$genallowed	=	$user->rights->expensereport->creer;
+		$delallowed	=	$user->rights->expensereport->creer;
 		$var 		= 	true;
-		print $formfile->showdocuments('expensereport',$filename,$filedir,$urlsource,$genallowed,$delallowed);
+		print $formfile->showdocuments('expensereport', $filename, $filedir, $urlsource, $genallowed, $delallowed);
 		$somethingshown = $formfile->numoffiles;
 	}
 
-	print '</div>';
-
 	if ($action != 'create' && $action != 'edit' && ($id || $ref))
 	{
-	    $permissiondellink=$user->rights->facture->creer;	// Used by the include of actions_dellink.inc.php
-		include DOL_DOCUMENT_ROOT.'/core/actions_dellink.inc.php';		// Must be include, not include_once
-
-	    // Link invoice to intervention
-	    if (GETPOST('LinkedFichinter')) {
-	        $object->fetch($id);
-	        $object->fetch_thirdparty();
-	        $result = $object->add_object_linked('fichinter', GETPOST('LinkedFichinter'));
-	    }
-
-	    // Show links to link elements
-	    $linktoelements=array();
-	    if (! empty($conf->global->EXPENSES_LINK_TO_INTERVENTION))
-	    {
-	        $linktoelements[]='fichinter';
-	        $linktoelem = $form->showLinkToObjectBlock($object, $linktoelements, array('expensereport'));
-	        $somethingshown = $form->showLinkedObjectBlock($object, $linktoelem);
-	    }
+		$linktoelem = $form->showLinkToObjectBlock($object, null, array('expensereport'));
+		$somethingshown = $form->showLinkedObjectBlock($object, $linktoelem);
 	}
+	print '</div><div class="fichehalfright"><div class="ficheaddleft">';
+	// List of actions on element
+	include_once DOL_DOCUMENT_ROOT . '/core/class/html.formactions.class.php';
+	$formactions = new FormActions($db);
+	$somethingshown = $formactions->showactions($object, 'expensereport', null);
+
+	print '</div></div></div>';
+
 }
 
 // Presend form

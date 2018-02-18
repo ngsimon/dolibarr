@@ -1,5 +1,5 @@
 # Dolibarr language file - Source file is en_US - compta
-MenuFinancial=Billing / Payment
+MenuFinancial=Billing | Payment
 TaxModuleSetupToModifyRules=Используйте <a href="%s">Настройку модуля Налоги</a> для изменения правил расчёта
 TaxModuleSetupToModifyRulesLT=Go to <a href="%s">Company setup</a> to modify rules for calculation
 OptionMode=Вариант для бухгалтеров
@@ -24,6 +24,7 @@ PaymentsNotLinkedToInvoice=Платежи, не связанные с какой
 PaymentsNotLinkedToUser=Платежи, не связанные с какой-либо пользователь
 Profit=Прибыль
 AccountingResult=Accounting result
+BalanceBefore=Balance (before)
 Balance=Баланс
 Debit=Дебет
 Credit=Кредит
@@ -79,6 +80,7 @@ AccountancyTreasuryArea=Бухгалтерия / Казначейство обл
 NewPayment=Новые оплаты
 Payments=Платежи
 PaymentCustomerInvoice=Заказчиком оплаты счетов-фактур
+PaymentSupplierInvoice=Поставщик оплате счета-фактуры
 PaymentSocialContribution=Social/fiscal tax payment
 PaymentVat=НДС платеж
 ListPayment=Список платежей

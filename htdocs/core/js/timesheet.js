@@ -113,15 +113,15 @@ function parseTime(timeStr, dt)
 function updateTotal(days,mode)
 {
 	console.log('updateTotal days='+days+' mode='+mode);
-    if(mode=="hours")
+    if (mode=="hours")
     {
         var total = new Date(0);
         total.setHours(0);
         total.setMinutes(0);   
         var nbline = document.getElementById('numberOfLines').value;
-        for (var i=0;i<nbline;i++)
+        for (var i=-1; i<nbline; i++)
         { 
-            var id='timespent['+i+']['+days+']';   
+            var id='timespent['+i+']['+days+']';
             var taskTime= new Date(0);
             var element=document.getElementById(id);
             if(element)
@@ -213,17 +213,15 @@ function updateTotal(days,mode)
             }
         });
         
-        if (document.getElementById('totalDay['+days+']'))	// May be null if no task records to output (nbline is also 0 in this case)
-        {
-        	document.getElementById('totalDay['+days+']').innerHTML = pad(total.getHours())+':'+pad(total.getMinutes());
-        	//addText(,total.getHours()+':'+total.getMinutes());
-        }
+        if (total.getHours() || total.getMinutes()) jQuery('.totalDay'+days).addClass("bold");
+        else jQuery('.totalDay'+days).removeClass("bold");
+    	jQuery('.totalDay'+days).text(pad(total.getHours())+':'+pad(total.getMinutes()));
     }
     else
     {
         var total =0;
         var nbline = document.getElementById('numberOfLines').value;
-        for (var i=0;i<nbline;i++)
+        for (var i=-1; i<nbline; i++)
         { 
             var id='timespent['+i+']['+days+']';   
             var taskTime= new Date(0);
@@ -257,10 +255,10 @@ function updateTotal(days,mode)
                 }
             }
         }
-        if (document.getElementById('totalDay['+days+']'))	// May be null if no task records to output (nbline is also 0 in this case)
-        {
-        	document.getElementById('totalDay['+days+']').innerHTML = total;
-        }
+        
+        if (total) jQuery('.totalDay'+days).addClass("bold");
+        else jQuery('.totalDay'+days).removeClass("bold");
+    	jQuery('.totalDay'+days).text(total);
     }
     
 }

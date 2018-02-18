@@ -83,9 +83,10 @@ class ChargeSociales extends CommonObject
         $sql.= ', p.code as mode_reglement_code, p.libelle as mode_reglement_libelle';
         $sql.= " FROM ".MAIN_DB_PREFIX."chargesociales as cs";
         $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."c_chargesociales as c ON cs.fk_type = c.id";
-        $sql.= ' LEFT JOIN '.MAIN_DB_PREFIX.'c_paiement as p ON cs.fk_mode_reglement = p.id AND p.entity IN (' . getEntity('c_paiement').')';
-        if ($ref) $sql.= " WHERE cs.rowid = ".$ref;
-        else $sql.= " WHERE cs.rowid = ".$id;
+        $sql.= ' LEFT JOIN '.MAIN_DB_PREFIX.'c_paiement as p ON cs.fk_mode_reglement = p.id AND p.entity IN ('.getEntity('c_paiement').')';
+        $sql.= ' WHERE cs.entity IN ('.getEntity('tax').')';
+        if ($ref) $sql.= " AND cs.rowid = ".$ref;
+        else $sql.= " AND cs.rowid = ".$id;
 
         dol_syslog(get_class($this)."::fetch", LOG_DEBUG);
         $resql=$this->db->query($sql);
@@ -155,6 +156,7 @@ class ChargeSociales extends CommonObject
     function create($user)
     {
     	global $conf;
+		$error=0;
 
         $now=dol_now();
 
@@ -190,8 +192,17 @@ class ChargeSociales extends CommonObject
             $this->id=$this->db->last_insert_id(MAIN_DB_PREFIX."chargesociales");
 
             //dol_syslog("ChargesSociales::create this->id=".$this->id);
-            $this->db->commit();
-            return $this->id;
+			$result=$this->call_trigger('PAYMENTSOCIALCONTRIBUTION_CREATE',$user);
+			if ($result < 0) $error++;
+
+			if(empty($error)) {
+				$this->db->commit();
+				return $this->id;
+			}
+			else {
+				$this->db->rollback();
+				return -1*$error;
+			}
         }
         else
         {
@@ -451,13 +462,14 @@ class ChargeSociales extends CommonObject
 
 
     /**
-     *  Return clicable name (with picto eventually)
-     *
-     *	@param	int		$withpicto		0=No picto, 1=Include picto into link, 2=Only picto
-     * 	@param	int		$maxlen			Longueur max libelle
-     *	@return	string					Chaine avec URL
+	 *  Return a link to the object card (with optionaly the picto)
+	 *
+	 *	@param	int		$withpicto		Include picto in link (0=No picto, 1=Include picto into link, 2=Only picto)
+     * 	@param	int		$maxlen			Max length of label
+     *  @param	int  	$notooltip		1=Disable tooltip
+     *	@return	string					String with link
      */
-    function getNomUrl($withpicto=0,$maxlen=0)
+    function getNomUrl($withpicto=0, $maxlen=0, $notooltip=0)
     {
         global $langs;
 
@@ -466,12 +478,14 @@ class ChargeSociales extends CommonObject
         if (empty($this->ref)) $this->ref=$this->lib;
         $label = $langs->trans("ShowSocialContribution").': '.$this->ref;
 
-        $link = '<a href="'.DOL_URL_ROOT.'/compta/sociales/card.php?id='.$this->id.'" title="'.dol_escape_htmltag($label, 1).'" class="classfortooltip">';
+        $linkstart = '<a href="'.DOL_URL_ROOT.'/compta/sociales/card.php?id='.$this->id.'" title="'.dol_escape_htmltag($label, 1).'" class="classfortooltip">';
         $linkend='</a>';
 
-        if ($withpicto) $result.=($link.img_object($label, 'bill', 'class="classfortooltip"').$linkend.' ');
-        if ($withpicto && $withpicto != 2) $result.=' ';
-        if ($withpicto != 2) $result.=$link.($maxlen?dol_trunc($this->ref,$maxlen):$this->ref).$linkend;
+        $result .= $linkstart;
+        if ($withpicto) $result.=img_object(($notooltip?'':$label), ($this->picto?$this->picto:'generic'), ($notooltip?(($withpicto != 2) ? 'class="paddingright"' : ''):'class="'.(($withpicto != 2) ? 'paddingright ' : '').'classfortooltip"'), 0, 0, $notooltip?0:1);
+        if ($withpicto != 2) $result.= ($maxlen?dol_trunc($this->ref,$maxlen):$this->ref);
+        $result .= $linkend;
+
         return $result;
     }
 
