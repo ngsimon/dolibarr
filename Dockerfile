@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y libpng12-dev libjpeg-dev libldap2-dev \
 	&& docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
         && docker-php-ext-install ldap \
         && docker-php-ext-install mysqli \
-        && apt-get purge -y libpng12-dev libjpeg-dev libldap2-dev
+        && apt-get purge -y libpng-dev libjpeg-dev libldap2-dev
 
 COPY htdocs/ /var/www/html/
 
